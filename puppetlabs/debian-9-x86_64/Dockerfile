@@ -5,7 +5,11 @@ FROM debian:9-slim AS build
 
 RUN (DEBIAN_FRONTEND=noninteractive && \
      apt-get update && \
-     apt-get install -y --no-install-recommends ca-certificates curl vim-tiny && \
+     apt-get install -y --no-install-recommends \
+       ca-certificates \
+       curl \
+       apt-transport-https \
+       vim-tiny && \
      rm -rf /var/lib/apt/lists/*)
 
 

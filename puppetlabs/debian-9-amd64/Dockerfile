@@ -1,4 +1,4 @@
-FROM debian:9-slim AS build
+FROM amd64/debian:9-slim
 
 
 # === Install Basic Utilities ===

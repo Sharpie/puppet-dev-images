@@ -53,7 +53,7 @@ RUN (DEBIAN_FRONTEND=noninteractive && \
 # Cribbed from the CentOS 7 image:
 #   https://hub.docker.com/r/centos/systemd/dockerfile
 RUN find /lib/systemd/system/sysinit.target.wants/ \
-      -type f \
+      -not -type d \
       -not -name systemd-tmpfiles-setup.service \
       -delete; \
     rm -f /lib/systemd/system/multi-user.target.wants/*; \

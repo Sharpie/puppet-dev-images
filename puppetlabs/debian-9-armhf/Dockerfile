@@ -26,13 +26,14 @@ COPY --from=0 /usr/bin/qemu-arm-static /usr/bin/
 
 # === Install Basic Utilities ===
 
-RUN (DEBIAN_FRONTEND=noninteractive && \
-     apt-get update && \
+RUN (DEBIAN_FRONTEND=noninteractive; \
+     apt-get update; \
      apt-get install -y --no-install-recommends \
        apt-transport-https \
        ca-certificates \
        curl \
-       vim-tiny && \
+       vim-tiny \
+       wget; \
      rm -rf /var/lib/apt/lists/*)
 
 

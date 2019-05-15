@@ -3,13 +3,14 @@ FROM i386/debian:9-slim
 
 # === Install Basic Utilities ===
 
-RUN (DEBIAN_FRONTEND=noninteractive && \
-     apt-get update && \
+RUN (DEBIAN_FRONTEND=noninteractive; \
+     apt-get update; \
      apt-get install -y --no-install-recommends \
+       apt-transport-https \
        ca-certificates \
        curl \
-       apt-transport-https \
-       vim-tiny && \
+       vim-tiny \
+       wget; \
      rm -rf /var/lib/apt/lists/*)
 
 

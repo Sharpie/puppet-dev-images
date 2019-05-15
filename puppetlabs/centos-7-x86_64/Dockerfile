@@ -6,7 +6,8 @@ FROM amd64/centos:7
 RUN yum -y --setopt=tsflags=nodocs update; \
     yum -y --setopt=tsflags=nodocs install \
       curl \
-      vim-minimal; \
+      vim-minimal \
+      wget; \
     yum clean all
 
 

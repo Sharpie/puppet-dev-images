@@ -34,6 +34,17 @@ RUN find /lib/systemd/system/sysinit.target.wants/ \
     rm -f /etc/machine-id
 
 
+# === Install RSyslog ===
+
+RUN yum -y --setopt=tsflags=nodocs update && \
+    yum -y --setopt=tsflags=nodocs install \
+      rsyslog; \
+    yum clean all
+
+# Populate /var/log/messages from journald
+RUN systemctl enable rsyslog.service
+
+
 # === Install OpenSSH ===
 
 RUN yum -y --setopt=tsflags=nodocs update; \

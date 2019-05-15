@@ -66,6 +66,18 @@ RUN find /lib/systemd/system/sysinit.target.wants/ \
     rm -f /etc/machine-id
 
 
+# === Install RSyslog ===
+
+RUN (DEBIAN_FRONTEND=noninteractive; \
+     apt-get update && \
+     apt-get install -y --no-install-recommends \
+       rsyslog; \
+     rm -rf /var/lib/apt/lists/*)
+
+# Populate /var/log/syslog from journald
+RUN systemctl enable rsyslog.service
+
+
 # === Install OpenSSH ===
 
 RUN (DEBIAN_FRONTEND=noninteractive && \

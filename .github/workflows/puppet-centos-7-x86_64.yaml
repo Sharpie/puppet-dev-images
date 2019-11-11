@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'puppetlabs/centos-7-x86_64/*'
+  create:
   # Manual trigger for testing.
   repository_dispatch:
 
@@ -51,3 +52,25 @@ jobs:
         run: bundle exec rake "litmus:provision[docker_exp,centos-7-x86_64:$DOCKER_TAG]"
       - name: Run Serverspec tests
         run: bundle exec rake litmus:acceptance:parallel
+
+  ship:
+    if: "github.event_name == 'create' && github.event.ref_type == 'tag'"
+    runs-on: ubuntu-18.04
+    needs: test
+    env:
+      GIT_TAG: '${{ github.ref }}'
+    steps:
+      - name: Log into Docker registry
+        env:
+          GH_TOKEN: '${{ secrets.PackageToken }}'
+        run: docker login docker.pkg.github.com -u Sharpie -p "${GH_TOKEN}"
+      - uses: actions/download-artifact@v1
+        with:
+          name: docker-images.tar
+          path: '.'
+      - name: Import Docker images
+        run: docker load -i docker-images.tar
+      - name: Tag Docker images
+        run: docker tag "centos-7-x86_64:${DOCKER_TAG}" "docker.pkg.github.com/sharpie/puppet-images/centos-7-x86_64:${GIT_TAG}"
+      - name: Shipit
+        run: docker push "docker.pkg.github.com/sharpie/puppet-images/centos-7-x86_64:${GIT_TAG}"

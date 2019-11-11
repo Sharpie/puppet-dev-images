@@ -10,7 +10,17 @@ on:
 jobs:
   build:
     runs-on: ubuntu-18.04
+    env:
+      DOCKER_TAG: '${{ github.sha }}'
     steps:
       - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
       - name: Build the Docker image
-        run: docker build puppetlabs/centos-7-x86_64 --tag centos-7-x86_64:$(date +'%Y%m%d%H%M%S')
+        run: docker build puppetlabs/centos-7-x86_64 --tag centos-7-x86_64:$DOCKER_TAG
+      - name: Export the Docker image
+        run: docker save -o docker-images.tar centos-7-x86_64:$DOCKER_TAG
+      - uses: actions/upload-artifact@v1
+        with:
+          name: docker-images.tar
+          path: docker-images.tar

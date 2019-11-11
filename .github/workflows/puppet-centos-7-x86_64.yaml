@@ -58,7 +58,9 @@ jobs:
     runs-on: ubuntu-18.04
     needs: test
     env:
-      GIT_TAG: '${{ github.ref }}'
+      # NOTE: `github.ref` resolves to `refs/tags/<name>` instead of
+      #       just `<name>`.
+      GIT_REF: '${{ github.ref }}'
     steps:
       - name: Log into Docker registry
         env:
@@ -71,6 +73,10 @@ jobs:
       - name: Import Docker images
         run: docker load -i docker-images.tar
       - name: Tag Docker images
-        run: docker tag "centos-7-x86_64:${DOCKER_TAG}" "docker.pkg.github.com/sharpie/puppet-images/centos-7-x86_64:${GIT_TAG}"
+        run: |
+          tag_name=$(basename "${GIT_REF}")
+          docker tag "centos-7-x86_64:${DOCKER_TAG}" "docker.pkg.github.com/sharpie/puppet-images/centos-7-x86_64:${tag_name}"
       - name: Shipit
-        run: docker push "docker.pkg.github.com/sharpie/puppet-images/centos-7-x86_64:${GIT_TAG}"
+        run: |
+          tag_name=$(basename "${GIT_REF}")
+          docker push "docker.pkg.github.com/sharpie/puppet-images/centos-7-x86_64:${tag_name}"

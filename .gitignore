@@ -1,0 +1,7 @@
+.bundle
+.rerun.json
+inventory.yaml
+modules
+Gemfile.lock
+Gemfile.local
+spec/fixtures

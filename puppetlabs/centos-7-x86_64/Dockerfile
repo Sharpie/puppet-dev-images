@@ -67,7 +67,11 @@ RUN mkdir -p /root/.ssh && \
 RUN systemctl enable sshd.service
 
 
-# === Runtime Configuration ===
+# === Runtime Container ===
+# Copying everything fromt the build container as a single layer
+# reduces the final image size by ~50 MB.
+FROM amd64/centos:7
+COPY --from=0 / /
 
 ENV container docker
 STOPSIGNAL SIGRTMIN+3

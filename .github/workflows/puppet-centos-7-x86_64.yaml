@@ -64,8 +64,8 @@ jobs:
     steps:
       - name: Log into Docker registry
         env:
-          GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
-        run: docker login docker.pkg.github.com -u Sharpie -p "${GH_TOKEN}"
+          DOCKER_CRED: '${{ secrets.BinTrayAPIKey }}'
+        run: docker login sharpie-docker-puppet-dev-images.bintray.io -u sharpie -p "${DOCKER_CRED}"
       - uses: actions/download-artifact@v1
         with:
           name: docker-images.tar
@@ -75,8 +75,10 @@ jobs:
       - name: Tag Docker images
         run: |
           tag_name=$(basename "${GIT_REF}")
-          docker tag "centos-7-x86_64:${DOCKER_TAG}" "docker.pkg.github.com/sharpie/puppet-images/centos-7-x86_64:${tag_name}"
+          docker tag "centos-7-x86_64:${DOCKER_TAG}" "sharpie-docker-puppet-dev-images.bintray.io/centos-7-x86_64:${tag_name}"
+          docker tag "centos-7-x86_64:${DOCKER_TAG}" "sharpie-docker-puppet-dev-images.bintray.io/centos-7-x86_64:latest"
       - name: Shipit
         run: |
           tag_name=$(basename "${GIT_REF}")
-          docker push "docker.pkg.github.com/sharpie/puppet-images/centos-7-x86_64:${tag_name}"
+          docker push "sharpie-docker-puppet-dev-images.bintray.io/centos-7-x86_64:${tag_name}"
+          docker push "sharpie-docker-puppet-dev-images.bintray.io/centos-7-x86_64:latest"

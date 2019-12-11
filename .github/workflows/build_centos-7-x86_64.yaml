@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'puppetlabs/centos-7-x86_64/*'
+      - '.github/workflows/build_centos-7-x86_64.yaml'
   create:
   # Manual trigger for testing.
   repository_dispatch:

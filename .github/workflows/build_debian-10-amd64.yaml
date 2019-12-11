@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'puppetlabs/debian-10-amd64/*'
+      - '.github/workflows/build_debian-10-amd64.yaml'
   create:
   # Manual trigger for testing.
   repository_dispatch:

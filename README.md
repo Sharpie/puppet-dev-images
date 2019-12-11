@@ -26,4 +26,5 @@ change in the future as GitHub Packages matures.
 
 image | docker command
 ----- | --------------
-![centos-7_x86_64 build status](https://github.com/Sharpie/puppet-dev-images/workflows/Build%20centos-7-x86_64/badge.svg) | `docker pull sharpie-docker-puppet-dev-images.bintray.io/centos-7-x86_64`
+![debian-10-amd64 build status](https://github.com/Sharpie/puppet-dev-images/workflows/Build%20debian-10-amd64/badge.svg) | `docker pull sharpie-docker-puppet-dev-images.bintray.io/debian-10-amd64`
+![centos-7-x86_64 build status](https://github.com/Sharpie/puppet-dev-images/workflows/Build%20centos-7-x86_64/badge.svg) | `docker pull sharpie-docker-puppet-dev-images.bintray.io/centos-7-x86_64`

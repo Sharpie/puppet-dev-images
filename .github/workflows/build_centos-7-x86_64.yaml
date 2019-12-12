@@ -10,7 +10,9 @@ on:
   repository_dispatch:
 
 env:
+  PLATFORM_TAG: centos-7-x86_64
   DOCKER_TAG: '${{ github.sha }}'
+  DOCKERFILE: puppetlabs/centos-7-x86_64
 
 jobs:
   build:
@@ -20,9 +22,9 @@ jobs:
         with:
           fetch-depth: 1
       - name: Build Docker images
-        run: docker build puppetlabs/centos-7-x86_64 --tag centos-7-x86_64:$DOCKER_TAG
+        run: docker build $DOCKERFILE --tag $PLATFORM_TAG:$DOCKER_TAG
       - name: Export Docker images
-        run: docker save -o docker-images.tar centos-7-x86_64:$DOCKER_TAG
+        run: docker save -o docker-images.tar $PLATFORM_TAG:$DOCKER_TAG
       - uses: actions/upload-artifact@v1
         with:
           name: docker-images.tar
@@ -50,7 +52,13 @@ jobs:
           bundle install --path .bundle/lib
           bundle exec rake spec_prep
       - name: Stage test container
-        run: bundle exec rake "litmus:provision[docker_exp,centos-7-x86_64:$DOCKER_TAG]"
+        run: |
+          run_args=$(docker inspect "${PLATFORM_TAG}:${DOCKER_TAG}" --format '{{ index .Config.Labels "docker-run-args" }}')
+          bundle exec bolt --modulepath spec/fixtures/modules \
+            task run provision::docker_exp --target localhost \
+            action=provision \
+            platform="${PLATFORM_TAG}:${DOCKER_TAG}" \
+            append_cli="${run_args}"
       - name: Run Serverspec tests
         run: bundle exec rake litmus:acceptance:parallel
 
@@ -76,10 +84,10 @@ jobs:
       - name: Tag Docker images
         run: |
           tag_name=$(basename "${GIT_REF}")
-          docker tag "centos-7-x86_64:${DOCKER_TAG}" "sharpie-docker-puppet-dev-images.bintray.io/centos-7-x86_64:${tag_name}"
-          docker tag "centos-7-x86_64:${DOCKER_TAG}" "sharpie-docker-puppet-dev-images.bintray.io/centos-7-x86_64:latest"
+          docker tag "${PLATFORM_TAG}:${DOCKER_TAG}" "sharpie-docker-puppet-dev-images.bintray.io/${PLATFORM_TAG}:${tag_name}"
+          docker tag "${PLATFORM_TAG}:${DOCKER_TAG}" "sharpie-docker-puppet-dev-images.bintray.io/${PLATFORM_TAG}:latest"
       - name: Shipit
         run: |
           tag_name=$(basename "${GIT_REF}")
-          docker push "sharpie-docker-puppet-dev-images.bintray.io/centos-7-x86_64:${tag_name}"
-          docker push "sharpie-docker-puppet-dev-images.bintray.io/centos-7-x86_64:latest"
+          docker push "sharpie-docker-puppet-dev-images.bintray.io/${PLATFORM_TAG}:${tag_name}"
+          docker push "sharpie-docker-puppet-dev-images.bintray.io/${PLATFORM_TAG}:latest"

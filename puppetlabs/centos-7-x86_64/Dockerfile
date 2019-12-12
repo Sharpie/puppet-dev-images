@@ -73,6 +73,11 @@ RUN systemctl enable sshd.service
 FROM amd64/centos:7
 COPY --from=0 / /
 
+# NOTE: Technically, should also have `--tmpfs /tmp:exec`. But, tools
+#       that use the Docker API to upload files, such as Bolt, can't write
+#       content to a mount.
+#       https://developers.redhat.com/blog/2016/09/13/running-systemd-in-a-non-privileged-container/
+LABEL docker-run-args="--tmpfs=/run --tmpfs /run/lock --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro"
 ENV container docker
 STOPSIGNAL SIGRTMIN+3
 VOLUME [ "/sys/fs/cgroup", "/tmp", "/run" ]

@@ -9,7 +9,8 @@ RUN yum -y --setopt=tsflags=nodocs update; \
       cronie \
       initscripts \
       vim-minimal \
-      wget; \
+      wget \
+      which; \
     yum clean all
 
 

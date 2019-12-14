@@ -77,6 +77,10 @@ RUN mkdir -p /root/.ssh && \
 #        tests don't work that well with Docker containers at the moment.
 RUN systemctl mask ssh.socket && systemctl enable ssh.service
 
+# Java installation fails if man1 does not exist
+#   https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=863199
+RUN mkdir -p /usr/share/man/man1
+
 
 # === Runtime Configuration ===
 # NOTE: Compacting a debian-slim image via COPY seems to bloat the final

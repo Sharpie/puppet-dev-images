@@ -8,6 +8,7 @@ RUN yum -y --setopt=tsflags=nodocs update; \
       curl \
       cronie \
       initscripts \
+      rsync \
       vim-minimal \
       wget \
       which; \

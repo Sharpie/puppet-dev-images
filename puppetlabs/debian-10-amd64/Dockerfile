@@ -9,6 +9,7 @@ RUN (DEBIAN_FRONTEND=noninteractive; \
        apt-transport-https \
        ca-certificates \
        curl \
+       rsync \
        vim-tiny \
        wget; \
      rm -rf /var/lib/apt/lists/*)

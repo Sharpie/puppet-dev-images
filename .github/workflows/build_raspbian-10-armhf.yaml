@@ -23,13 +23,16 @@ jobs:
           fetch-depth: 1
       - name: Build Docker images
         run: |
+          # We're playing with ARM binaries, so we need binfmt support.
+          sudo apt install -y qemu-user-static
+
           # Raspbian is a bit different. It needs a two-stage build,
           # but there's a privileged bit in the middle where a chroot
           # environment gets built. However, docker build don't do
           # privileges. Because reasons.
           cd $DOCKERFILE
           docker build . -f Dockerfile.build --tag raspbian-build
-          docker run --rm --privileged -v "${PWD}/output" raspbian-build
+          docker run --rm --privileged -v "${PWD}:/output" raspbian-build
           docker build . --tag $PLATFORM_TAG:$DOCKER_TAG
       - name: Export Docker images
         run: docker save -o docker-images.tar $PLATFORM_TAG:$DOCKER_TAG

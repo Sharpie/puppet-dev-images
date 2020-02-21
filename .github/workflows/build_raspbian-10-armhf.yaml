@@ -1,0 +1,101 @@
+name: Build raspbian-10-armhf
+
+on:
+  push:
+    paths:
+      - 'puppetlabs/raspbian-10-armhf/*'
+      - '.github/workflows/build_raspbian-10-armhf.yaml'
+  create:
+  # Manual trigger for testing.
+  repository_dispatch:
+
+env:
+  PLATFORM_TAG: raspbian-10-armhf
+  DOCKER_TAG: '${{ github.sha }}'
+  DOCKERFILE: puppetlabs/raspbian-10-armhf
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: Build Docker images
+        run: |
+          # Raspbian is a bit different. It needs a two-stage build,
+          # but there's a privileged bit in the middle where a chroot
+          # environment gets built. However, docker build don't do
+          # privileges. Because reasons.
+          cd $DOCKERFILE
+          docker build . -f Dockerfile.build --tag raspbian-build
+          docker run --rm --privileged -v "${PWD}/output" raspbian-build
+          docker build . --tag $PLATFORM_TAG:$DOCKER_TAG
+      - name: Export Docker images
+        run: docker save -o docker-images.tar $PLATFORM_TAG:$DOCKER_TAG
+      - uses: actions/upload-artifact@v1
+        with:
+          name: docker-images.tar
+          path: docker-images.tar
+
+  test:
+    runs-on: ubuntu-18.04
+    needs: build
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - uses: actions/download-artifact@v1
+        with:
+          name: docker-images.tar
+          path: '.'
+      - name: Import Docker images
+        run: docker load -i docker-images.tar
+      - uses: actions/setup-ruby@v1.1.0
+        with:
+          ruby-version: '2.5.x'
+      - name: Provision test tools
+        run: |
+          gem install bundler
+          bundle install --path .bundle/lib
+          bundle exec rake spec_prep
+      - name: Stage test container
+        run: |
+          run_args=$(docker inspect "${PLATFORM_TAG}:${DOCKER_TAG}" --format '{{ index .Config.Labels "docker-run-args" }}')
+          bundle exec bolt --modulepath spec/fixtures/modules \
+            task run provision::docker_exp --target localhost \
+            action=provision \
+            platform="${PLATFORM_TAG}:${DOCKER_TAG}" \
+            append_cli="${run_args}"
+      - name: Run Serverspec tests
+        run: bundle exec rake litmus:acceptance:parallel
+
+  ship:
+    if: "github.event_name == 'create' && github.event.ref_type == 'tag'"
+    runs-on: ubuntu-18.04
+    needs: test
+    env:
+      # NOTE: `github.ref` resolves to `refs/tags/<name>` instead of
+      #       just `<name>`.
+      GIT_REF: '${{ github.ref }}'
+    steps:
+      - name: Log into Docker registry
+        env:
+          DOCKER_CRED: '${{ secrets.BinTrayAPIKey }}'
+        run: docker login sharpie-docker-puppet-dev-images.bintray.io -u sharpie -p "${DOCKER_CRED}"
+      - uses: actions/download-artifact@v1
+        with:
+          name: docker-images.tar
+          path: '.'
+      - name: Import Docker images
+        run: docker load -i docker-images.tar
+      - name: Tag Docker images
+        run: |
+          tag_name=$(basename "${GIT_REF}")
+          docker tag "${PLATFORM_TAG}:${DOCKER_TAG}" "sharpie-docker-puppet-dev-images.bintray.io/${PLATFORM_TAG}:${tag_name}"
+          docker tag "${PLATFORM_TAG}:${DOCKER_TAG}" "sharpie-docker-puppet-dev-images.bintray.io/${PLATFORM_TAG}:latest"
+      - name: Shipit
+        run: |
+          tag_name=$(basename "${GIT_REF}")
+          docker push "sharpie-docker-puppet-dev-images.bintray.io/${PLATFORM_TAG}:${tag_name}"
+          docker push "sharpie-docker-puppet-dev-images.bintray.io/${PLATFORM_TAG}:latest"

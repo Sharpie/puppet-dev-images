@@ -70,6 +70,10 @@ jobs:
             action=provision \
             platform="${PLATFORM_TAG}:${DOCKER_TAG}" \
             append_cli="${run_args}"
+
+          # Give some time for armhf to boot under emulation.
+          # NOTE: This could likely be replaced with a wait_until_available
+          sleep 5
       - name: Run Serverspec tests
         run: bundle exec rake litmus:acceptance:parallel
 

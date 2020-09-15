@@ -8,6 +8,9 @@ on:
   create:
   # Manual trigger for testing.
   repository_dispatch:
+    types:
+      - raspbian-10-armhf
+      - all
 
 env:
   PLATFORM_TAG: raspbian-10-armhf

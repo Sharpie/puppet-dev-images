@@ -8,6 +8,9 @@ on:
   create:
   # Manual trigger for testing.
   repository_dispatch:
+    types:
+      - debian-10-amd64
+      - all
 
 env:
   PLATFORM_TAG: debian-10-amd64

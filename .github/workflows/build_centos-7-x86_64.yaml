@@ -8,6 +8,9 @@ on:
   create:
   # Manual trigger for testing.
   repository_dispatch:
+    types:
+      - centos-7-x86_64
+      - all
 
 env:
   PLATFORM_TAG: centos-7-x86_64

@@ -111,10 +111,10 @@ jobs:
       - name: Tag Docker images
         run: |
           tag_name=$(basename "${GIT_REF}")
-          docker tag "${PLATFORM_TAG}:${DOCKER_TAG}" "ghcr.io/${PLATFORM_TAG}:${tag_name}"
-          docker tag "${PLATFORM_TAG}:${DOCKER_TAG}" "ghcr.io/${PLATFORM_TAG}:latest"
+          docker tag "${PLATFORM_TAG}:${DOCKER_TAG}" "ghcr.io/sharpie/${PLATFORM_TAG}:${tag_name}"
+          docker tag "${PLATFORM_TAG}:${DOCKER_TAG}" "ghcr.io/sharpie/${PLATFORM_TAG}:latest"
       - name: Shipit
         run: |
           tag_name=$(basename "${GIT_REF}")
-          docker push "ghcr.io/${PLATFORM_TAG}:${tag_name}"
-          docker push "ghcr.io/${PLATFORM_TAG}:latest"
+          docker push "ghcr.io/sharpie/${PLATFORM_TAG}:${tag_name}"
+          docker push "ghcr.io/sharpie/${PLATFORM_TAG}:latest"

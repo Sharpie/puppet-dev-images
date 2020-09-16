@@ -21,6 +21,8 @@ RUN (DEBIAN_FRONTEND=noninteractive; \
        apt-transport-https \
        ca-certificates \
        curl \
+       iproute2 \
+       net-tools\
        rsync \
        vim-tiny \
        wget; \

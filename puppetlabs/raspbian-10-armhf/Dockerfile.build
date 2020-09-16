@@ -34,7 +34,7 @@ RUN git clone https://github.com/debuerreotype/debuerreotype /opt/debuerreotype 
       ln -svL "$PWD/$f" "/usr/local/bin/$f"; \
     done;
 
-RUN wget -O raspbian.deb 'https://archive.raspbian.org/raspbian/pool/main/r/raspbian-archive-keyring/raspbian-archive-keyring-udeb_20120528.2_all.udeb' && \
+RUN wget -O raspbian.deb 'http://raspbian.raspberrypi.org/raspbian/pool/main/r/raspbian-archive-keyring/raspbian-archive-keyring-udeb_20120528.2_all.udeb' && \
     apt install -y ./raspbian.deb && \
     rm raspbian.deb
 

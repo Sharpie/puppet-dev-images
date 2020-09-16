@@ -6,7 +6,7 @@ debuerreotype-init \
   --keyring /usr/share/keyrings/raspbian-archive-keyring.gpg \
   --debootstrap qemu-debootstrap \
   --no-merged-usr \
-  rootfs buster http://archive.raspbian.org/raspbian
+  rootfs buster http://raspbian.raspberrypi.org/raspbian
 
 debuerreotype-minimizing-config rootfs
 debuerreotype-apt-get rootfs update -qq

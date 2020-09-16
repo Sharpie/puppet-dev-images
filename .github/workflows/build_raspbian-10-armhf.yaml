@@ -19,16 +19,21 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v1
         with:
           fetch-depth: 1
-      - name: Build Docker images
+      - name: Setup QEMU
         run: |
           # We're playing with ARM binaries, so we need binfmt support.
-          sudo apt install -y qemu-user-static
-
+          # However, we need the latest version of QEMU to fix bugs with
+          # recent kernels, glibc, and systemd.
+          cd /tmp
+          curl -LO http://http.us.debian.org/debian/pool/main/q/qemu/qemu-user-static_5.1+dfsg-4_amd64.deb
+          sudo apt install -y ./qemu-user-static_5.1+dfsg-4_amd64.deb
+      - name: Build Docker images
+        run: |
           # Raspbian is a bit different. It needs a two-stage build,
           # but there's a privileged bit in the middle where a chroot
           # environment gets built. However, docker build don't do
@@ -45,7 +50,7 @@ jobs:
           path: docker-images.tar
 
   test:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: build
     steps:
       - uses: actions/checkout@v1
@@ -60,11 +65,16 @@ jobs:
       - uses: actions/setup-ruby@v1.1.0
         with:
           ruby-version: '2.5.x'
-      - name: Provision test tools
+      - name: Setup QEMU
         run: |
           # We're playing with ARM binaries, so we need binfmt support.
-          sudo apt install -y qemu-user-static
-
+          # However, we need the latest version of QEMU to fix bugs with
+          # recent kernels, glibc, and systemd.
+          cd /tmp
+          curl -LO http://http.us.debian.org/debian/pool/main/q/qemu/qemu-user-static_5.1+dfsg-4_amd64.deb
+          sudo apt install -y ./qemu-user-static_5.1+dfsg-4_amd64.deb
+      - name: Provision test tools
+        run: |
           gem install bundler
           bundle install --path .bundle/lib
           bundle exec rake spec_prep
@@ -81,7 +91,7 @@ jobs:
 
   ship:
     if: "github.event_name == 'create' && github.event.ref_type == 'tag'"
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: test
     env:
       # NOTE: `github.ref` resolves to `refs/tags/<name>` instead of

@@ -68,7 +68,8 @@ jobs:
       - name: Provision test tools
         run: |
           gem install bundler
-          bundle install --path .bundle/lib
+          bundle config set path .bundle/lib
+          bundle install
           bundle exec rake spec_prep
       - name: Stage test container
         run: |

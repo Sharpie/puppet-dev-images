@@ -54,14 +54,11 @@ RUN (DEBIAN_FRONTEND=noninteractive && \
 # Debian 10 has a lot of change compared to Debian 9. New kernel,
 # new libc, updated systemd. Turns out systemd is making SELinux-related
 # system calls that QEMU doesn't emulate. This copies in `qemu-arm-static`
-# from the QEMU 5.1 build for Debian Bullseye to fix some bugs:
+# from the QEMU 5.2 build for Debian Bullseye to fix some bugs:
 #
 #   https://bugs.launchpad.net/qemu/+bug/1823790
-run curl -L \
-      -o /tmp/qemu-arm-static \
-      'https://dl.bintray.com/sharpie/puppet-agent-bin/qemu-arm-static/5.1+dfsg-4/qemu-arm-static' && \
-    chmod +x /tmp/qemu-arm-static && \
-    mv /tmp/qemu-arm-static /usr/bin
+COPY qemu-arm-static /usr/bin/
+RUN chmod +x /usr/bin/qemu-arm-static
 
 # Remove units that are not strictly required to operate a container.
 # Improves systemd boot time and reduces errors from starting services

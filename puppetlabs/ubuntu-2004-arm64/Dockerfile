@@ -18,15 +18,12 @@ RUN (DEBIAN_FRONTEND=noninteractive; \
 
 # Install a patched copy of qemu-arm-static
 #
-# This copies in `qemu-arm-static` # from the QEMU 5.1 build for
+# This copies in `qemu-arm-static` # from the QEMU 5.2 build for
 # Debian Bullseye to fix some bugs:
 #
 #   https://bugs.launchpad.net/qemu/+bug/1823790
-run curl -L \
-      -o /tmp/qemu-aarch64-static \
-      'https://dl.bintray.com/sharpie/puppet-agent-bin/qemu-arm-static/5.1+dfsg-4/qemu-aarch64-static' && \
-    chmod +x /tmp/qemu-aarch64-static && \
-    mv /tmp/qemu-aarch64-static /usr/bin
+COPY qemu-aarch64-static /usr/bin/
+RUN chmod +x /usr/bin/qemu-aarch64-static
 
 # === Install SystemD ===
 

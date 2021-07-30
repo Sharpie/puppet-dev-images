@@ -62,9 +62,9 @@ jobs:
           path: '.'
       - name: Import Docker images
         run: docker load -i docker-images.tar
-      - uses: actions/setup-ruby@v1
+      - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '2.5.x'
+          ruby-version: '2.5'
       - name: Setup QEMU
         run: |
           # We're playing with ARM binaries, so we need binfmt support.

@@ -6,6 +6,7 @@ on:
       - 'puppetlabs/ubuntu-2004-arm64/*'
       - '.github/workflows/build_ubuntu-2004-arm64.yaml'
   create:
+  workflow_dispatch:
   # Manual trigger for testing.
   repository_dispatch:
     types:

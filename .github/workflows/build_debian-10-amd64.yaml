@@ -6,6 +6,7 @@ on:
       - 'puppetlabs/debian-10-amd64/*'
       - '.github/workflows/build_debian-10-amd64.yaml'
   create:
+  workflow_dispatch:
   # Manual trigger for testing.
   repository_dispatch:
     types:

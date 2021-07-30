@@ -6,6 +6,7 @@ on:
       - 'puppetlabs/raspbian-10-armhf/*'
       - '.github/workflows/build_raspbian-10-armhf.yaml'
   create:
+  workflow_dispatch:
   # Manual trigger for testing.
   repository_dispatch:
     types:

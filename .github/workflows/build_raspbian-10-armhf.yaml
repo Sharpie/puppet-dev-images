@@ -86,7 +86,7 @@ jobs:
             task run provision::docker_exp --target localhost \
             action=provision \
             platform="${PLATFORM_TAG}:${DOCKER_TAG}" \
-            append_cli="${run_args}"
+            vars="docker_run_opts: ['${run_args}']"
       - name: Run Serverspec tests
         run: bundle exec rake litmus:acceptance:parallel
 

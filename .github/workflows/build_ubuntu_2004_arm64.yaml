@@ -31,8 +31,8 @@ jobs:
           # However, we need the latest version of QEMU to fix bugs with
           # recent kernels, glibc, and systemd.
           cd /tmp
-          curl -sSLO 'https://cloudfront.debian.net/debian/pool/main/q/qemu/qemu-user-static_5.2+dfsg-11_amd64.deb'
-          sudo apt install -y ./qemu-user-static_5.2+dfsg-11_amd64.deb
+          curl -sSLO 'https://cloudfront.debian.net/debian/pool/main/q/qemu/qemu-user-static_6.0+dfsg-2exp_amd64.deb'
+          sudo apt install -y ./qemu-user-static_6.0+dfsg-2exp_amd64.deb
       - name: Build Docker images
         run: docker build $DOCKERFILE --tag $PLATFORM_TAG:$DOCKER_TAG
       - name: Export Docker images

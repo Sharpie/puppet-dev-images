@@ -20,18 +20,21 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
       - name: Setup QEMU
         run: |
-          sudo apt install -y qemu-user-static binfmt-support
+          # We're playing with ARM binaries, so we need binfmt support.
+          # However, we need the latest version of QEMU to fix bugs with
+          # recent kernels, glibc, and systemd.
+          cd /tmp
+          curl -sSLO 'https://cloudfront.debian.net/debian/pool/main/q/qemu/qemu-user-static_6.0+dfsg-2exp_amd64.deb'
+          sudo apt install -y ./qemu-user-static_6.0+dfsg-2exp_amd64.deb
       - name: Build Docker images
-        run: |
-          # Use buildx so that --platform is set appropriately
-          docker buildx build $DOCKERFILE --platform linux/arm64 --tag $PLATFORM_TAG:$DOCKER_TAG
+        run: docker build $DOCKERFILE --tag $PLATFORM_TAG:$DOCKER_TAG
       - name: Export Docker images
         run: docker save -o docker-images.tar $PLATFORM_TAG:$DOCKER_TAG
       - uses: actions/upload-artifact@v1
@@ -40,7 +43,7 @@ jobs:
           path: docker-images.tar
 
   test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     needs: build
     steps:
       - uses: actions/checkout@v2
@@ -48,7 +51,12 @@ jobs:
           fetch-depth: 1
       - name: Setup QEMU
         run: |
-          sudo apt install -y qemu-user-static binfmt-support
+          # We're playing with ARM binaries, so we need binfmt support.
+          # However, we need the latest version of QEMU to fix bugs with
+          # recent kernels, glibc, and systemd.
+          cd /tmp
+          curl -sSLO 'https://cloudfront.debian.net/debian/pool/main/q/qemu/qemu-user-static_5.2+dfsg-11_amd64.deb'
+          sudo apt install -y ./qemu-user-static_5.2+dfsg-11_amd64.deb
       - uses: actions/download-artifact@v1
         with:
           name: docker-images.tar
@@ -77,7 +85,7 @@ jobs:
 
   ship:
     if: "github.event_name == 'create' && github.event.ref_type == 'tag'"
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     needs: test
     env:
       # NOTE: `github.ref` resolves to `refs/tags/<name>` instead of

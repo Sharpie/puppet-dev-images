@@ -84,7 +84,7 @@ COPY --from=0 / /
 #       that systemd can no longer be run unprivileged in a container.
 #
 #       Podman is an alternative that allows unprivileged execution.
-LABEL docker-run-args="--privileged --cgroupns=host -v /sys/fs/cgroup:/sys/fs/cgroup:rw"
+LABEL docker-run-args="--privileged --cgroupns=host -v /sys/fs/cgroup:/sys/fs/cgroup:rw --tmpfs /run --tmpfs /run/lock --tmpfs /var/lib/journal"
 LABEL podman-run-args="--systemd=true"
 LABEL org.opencontainers.image.source="https://github.com/Sharpie/puppet-dev-images"
 ENV container docker

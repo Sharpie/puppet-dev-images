@@ -37,7 +37,8 @@ jobs:
           cd $DOCKERFILE
           docker build . -f Dockerfile.build --tag raspbian-build
           docker run --rm --privileged -v "${PWD}:/output" raspbian-build
-          docker build . --tag $PLATFORM_TAG:$DOCKER_TAG
+          # Use buildx so that --platform is set appropriately
+          docker buildx build . --platform=linux/arm/v7 --tag $PLATFORM_TAG:$DOCKER_TAG
       - name: Export Docker images
         run: docker save -o docker-images.tar $PLATFORM_TAG:$DOCKER_TAG
       - uses: actions/upload-artifact@v1

@@ -1,4 +1,4 @@
-FROM --patform=linux/arm/v7 scratch
+FROM --platform=linux/arm/v7 scratch
 
 # === Set up emulation for ARM binaries ===
 # Requires /proc/sys/fs/binfmt_misc/qemu-arm to be configured

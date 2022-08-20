@@ -63,7 +63,7 @@ jobs:
           ruby-version: '2.5'
       - name: Setup QEMU
         run: |
-          sudo apt install -y qemu-user-static binfmt-misc
+          sudo apt install -y qemu-user-static binfmt-support
       - name: Provision test tools
         run: |
           gem install bundler

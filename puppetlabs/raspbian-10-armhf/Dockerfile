@@ -1,4 +1,4 @@
-FROM scratch
+FROM --platform=linux/arm/v7 scratch
 
 # === Set up emulation for ARM binaries ===
 # Requires /proc/sys/fs/binfmt_misc/qemu-arm to be configured
@@ -48,17 +48,6 @@ RUN (DEBIAN_FRONTEND=noninteractive && \
      apt-get update && \
      apt-get install -y --no-install-recommends systemd systemd-sysv && \
      rm -rf /var/lib/apt/lists/*)
-
-# Install a patched copy of qemu-arm-static
-#
-# Debian 10 has a lot of change compared to Debian 9. New kernel,
-# new libc, updated systemd. Turns out systemd is making SELinux-related
-# system calls that QEMU doesn't emulate. This copies in `qemu-arm-static`
-# from the QEMU 5.2 build for Debian Bullseye to fix some bugs:
-#
-#   https://bugs.launchpad.net/qemu/+bug/1823790
-COPY qemu-arm-static /usr/bin/
-RUN chmod +x /usr/bin/qemu-arm-static
 
 # Remove units that are not strictly required to operate a container.
 # Improves systemd boot time and reduces errors from starting services
@@ -122,11 +111,15 @@ RUN mkdir -p /usr/share/man/man1
 # NOTE: Compacting a debian-slim image via COPY seems to bloat the final
 #       image by ~75 MB instead of reducing it.
 
-# NOTE: Technically, should also have `--tmpfs /tmp:exec`. But, tools
-#       that use the Docker API to upload files, such as Bolt, can't write
-#       content to a mount.
-#       https://developers.redhat.com/blog/2016/09/13/running-systemd-in-a-non-privileged-container/
-LABEL docker-run-args="--tmpfs=/run --tmpfs /run/lock --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro"
+# NOTE: For compatiblity with Linux hosts running SystemD with CGroupsv2
+#       and: `systemd.enableUnifiedCgroupHierarchy = true`
+#
+#       This is the default host configuration for Ubuntu 22.04 and means
+#       that systemd can no longer be run unprivileged in a container.
+#
+#       Podman is an alternative that allows unprivileged execution.
+LABEL docker-run-args="--privileged --cgroupns=host -v /sys/fs/cgroup:/sys/fs/cgroup:rw"
+LABEL podman-run-args="--systemd=true"
 LABEL org.opencontainers.image.source="https://github.com/Sharpie/puppet-dev-images"
 ENV container docker
 STOPSIGNAL SIGRTMIN+3

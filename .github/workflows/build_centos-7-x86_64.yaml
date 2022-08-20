@@ -20,7 +20,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
         with:
@@ -35,7 +35,7 @@ jobs:
           path: docker-images.tar
 
   test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     needs: build
     steps:
       - uses: actions/checkout@v2
@@ -69,7 +69,7 @@ jobs:
 
   ship:
     if: "github.event_name == 'create' && github.event.ref_type == 'tag'"
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     needs: test
     env:
       # NOTE: `github.ref` resolves to `refs/tags/<name>` instead of

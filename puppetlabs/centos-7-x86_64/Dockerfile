@@ -77,11 +77,15 @@ RUN systemctl enable sshd.service
 FROM amd64/centos:7
 COPY --from=0 / /
 
-# NOTE: Technically, should also have `--tmpfs /tmp:exec`. But, tools
-#       that use the Docker API to upload files, such as Bolt, can't write
-#       content to a mount.
-#       https://developers.redhat.com/blog/2016/09/13/running-systemd-in-a-non-privileged-container/
-LABEL docker-run-args="--tmpfs=/run --tmpfs /run/lock --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro"
+# NOTE: For compatiblity with Linux hosts running SystemD with CGroupsv2
+#       and: `systemd.enableUnifiedCgroupHierarchy = true`
+#
+#       This is the default host configuration for Ubuntu 22.04 and means
+#       that systemd can no longer be run unprivileged in a container.
+#
+#       Podman is an alternative that allows unprivileged execution.
+LABEL docker-run-args="--privileged --cgroupns=host -v /sys/fs/cgroup:/sys/fs/cgroup:rw"
+LABEL podman-run-args="--systemd=true"
 LABEL org.opencontainers.image.source="https://github.com/Sharpie/puppet-dev-images"
 ENV container docker
 STOPSIGNAL SIGRTMIN+3

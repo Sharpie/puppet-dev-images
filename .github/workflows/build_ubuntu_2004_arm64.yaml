@@ -57,7 +57,7 @@ jobs:
           cd /tmp
           curl -sSLO 'https://mirrors.edge.kernel.org/debian/pool/main/q/qemu/qemu-user-static_5.2+dfsg-11+deb11u2_amd64.deb'
           sudo apt install -y ./qemu-user-static_5.2+dfsg-11+deb11u2_amd64.deb binfmt-support
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: docker-images.tar
           path: '.'
@@ -96,7 +96,7 @@ jobs:
         env:
           DOCKER_CRED: '${{ secrets.GITHUB_TOKEN }}'
         run: echo $DOCKER_CRED | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: docker-images.tar
           path: '.'

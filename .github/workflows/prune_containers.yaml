@@ -22,6 +22,6 @@ jobs:
         with:
           account: user
           token: '${{ secrets.GITHUB_TOKEN }}'
-          image-names: 'puppet-dev-images/debian-12'
+          image-names: 'puppet-dev-images/debian-12 puppet-dev-images/raspbian-12'
           image-tags: '!latest'
           cut-off: '90d'

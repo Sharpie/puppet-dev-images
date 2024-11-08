@@ -1,0 +1,73 @@
+FROM debian:12 AS build
+
+COPY rootfs/ /
+
+RUN set -xe \
+    && apt update \
+    && apt full-upgrade -y \
+    && apt autoremove \
+    && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends \
+       apt-transport-https \
+       bind9-dnsutils \
+       ca-certificates \
+       curl \
+       file \
+       iproute2 \
+       iputils-ping \
+       netcat-traditional \
+       procps \
+       rsync \
+       vim-tiny \
+       wget \
+    && update-alternatives --set editor /usr/bin/vim.tiny
+
+RUN set -xe \
+    && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends \
+       systemd \
+       systemd-sysv \
+    && systemctl set-default multi-user.target \
+    && systemctl mask \
+       getty.target
+
+## === Install Rsyslog ===
+## Many Puppet tests interact with /var/log/messages or /var/log/syslog
+RUN set -xe \
+    && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends \
+       rsyslog \
+    && systemctl enable rsyslog.service
+
+## === Install OpenSSH
+## SSH is the default control channel used by
+## Beaker and Vanagon.
+RUN set -xe \
+    && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends \
+       openssh-client \
+       openssh-server \
+    && systemctl enable ssh.service \
+    && systemctl mask ssh.socket
+
+RUN sed -ri'' -e 's/^#?PermitRootLogin .*/PermitRootLogin yes/' \
+      -e 's/^#?PasswordAuthentication .*/PasswordAuthentication yes/' \
+      -e 's/^#?UseDNS .*/UseDNS no/' \
+      /etc/ssh/sshd_config
+
+# FIXME: Make key configurable
+RUN mkdir -p /root/.ssh \
+    && curl -G https://raw.githubusercontent.com/hashicorp/vagrant/master/keys/vagrant.pub \
+       -o /root/.ssh/authorized_keys
+
+RUN rm -rf /var/lib/apt/lists/*
+
+FROM scratch
+COPY --from=build / /
+
+ENV container=docker
+ENV locale=C.UTF-8
+
+STOPSIGNAL SIGRTMIN+3
+VOLUME ["/tmp", "/run", "/run/lock"]
+
+LABEL docker-run-args="--tty --privileged --tmpfs=/tmp --tmpfs=/run --tmpfs=/run/lock"
+LABEL podman-run-args="--tty --systemd=true"
+
+CMD ["/sbin/init"]

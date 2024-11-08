@@ -1,0 +1,27 @@
+---
+name: Prune Container Builds
+
+on:
+  workflow_dispatch: {}
+  # Run at noon, on the 2nd and 16th of each month.
+  # Builds happen on the 1st and 15th, this workflow
+  # cleans up.
+  schedule:
+    - cron: '0 12 2 * *'
+    - cron: '0 12 16 * *'
+
+jobs:
+  prune:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: snok/container-retention-policy@v3.0.0
+        # TODO: Should use keep-n-most-recent to keep the last good build
+        #       in case auto-building starts failing. However, with
+        #       multi-arch builds this has to be handled by explicitly listing
+        #       skip-shas.
+        with:
+          account: user
+          token: '${{ secrets.GITHUB_TOKEN }}'
+          image-names: 'puppet-dev-images/debian-12'
+          image-tags: '!latest'
+          cut-off: '90d'

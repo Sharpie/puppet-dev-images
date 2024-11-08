@@ -1,0 +1,20 @@
+---
+name: Build Debian 12
+
+on:
+  workflow_dispatch: {}
+  push:
+    paths:
+      - 'images/debian-12/**'
+      - '.github/workflows/build_container.yaml'
+  # Build at noon, on the 1st and 15th of each month.
+  schedule:
+    - cron: '0 12 1 * *'
+    - cron: '0 12 15 * *'
+
+jobs:
+  build_debian-12:
+    uses: ./.github/workflows/build_container.yaml
+    with:
+      image: debian-12
+      platforms: '["amd64", "arm64"]'

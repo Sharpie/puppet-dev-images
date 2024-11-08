@@ -1,0 +1,18 @@
+---
+services:
+  puppet-dev:
+    container_name: puppet-dev
+    image: '${DOCKER_TAG:-ghcr.io/sharpie/puppet-dev-images/debian-12:latest}'
+    platform: '${DOCKER_PLATFORM:-}'
+    environment:
+      container: docker
+    networks:
+      - test
+    privileged: true
+    tmpfs:
+      - /run
+      - /tmp
+    tty: true
+
+networks:
+  test:

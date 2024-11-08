@@ -1,0 +1,201 @@
+---
+name: Build Containers
+
+on:
+  workflow_dispatch:
+    inputs:
+      image:
+        description: 'Container image to build'
+        required: true
+        type: choice
+        options:
+          - debian-12
+      platforms:
+        description: 'JSON list of platforms to build'
+        required: true
+        type: string
+        default: '["amd64", "arm64"]'
+  workflow_call:
+    inputs:
+      image:
+        required: true
+        type: string
+      platforms:
+        required: true
+        type: string
+
+env:
+  IMAGE: '${{ inputs.image }}'
+
+jobs:
+  setup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 1
+    outputs:
+      tag: '${{ steps.set-params.outputs.tag }}'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Set Project Params
+        id: set-params
+        run: |
+          printf 'tag=%s\n' "$(date +'%Y%m%d')-$(git log --format=%h --max-count=1 |tr -d '\n')" | tee -a $GITHUB_OUTPUT
+
+  build:
+    needs:
+      - setup
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        platform: '${{ fromJSON(inputs.platforms) }}'
+    env:
+      PLATFORM: '${{ matrix.platform }}'
+      DOCKER_TAR: '${{ inputs.image }}_${{ needs.setup.outputs.tag }}_${{ matrix.platform }}.tar'
+      DOCKER_TAG: '${{ inputs.image }}:${{ needs.setup.outputs.tag }}-${{ matrix.platform }}'
+    # NOTE: Must explicitly define an output for each possible architecture because
+    #       the following issue is not fully implemented (as of Fall 2024):
+    #
+    #         https://github.com/actions/runner/pull/2477 
+    outputs:
+      amd64: '${{ steps.save_output.outputs.amd64 }}'
+      arm64: '${{ steps.save_output.outputs.arm64 }}'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: docker/setup-qemu-action@v3
+        if: "${{ matrix.platform != 'amd64'}}"
+        with:
+          platforms: '${{ matrix.platform }}'
+      - uses: docker/setup-buildx-action@v3
+      - name: Build Docker Container
+        run: |
+          docker buildx bake --load --set "*.platform=linux/${PLATFORM}" --set "${IMAGE}.tags=${DOCKER_TAG}" "${IMAGE}"
+      - name: Export Docker Container
+        run: |
+          docker save -o "${DOCKER_TAR}" "${DOCKER_TAG}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: '${{ env.DOCKER_TAR }}'
+          path: '${{ env.DOCKER_TAR }}'
+      - name: Save Build Output
+        id: save_output
+        run: |
+          printf '%s=%s@%s\n' "${PLATFORM}" "${DOCKER_TAR}" "${DOCKER_TAG}" | tee -a $GITHUB_OUTPUT
+
+  docker-acceptance:
+    needs:
+      - setup
+      - build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        platform: '${{ fromJSON(inputs.platforms) }}'
+    env:
+      PLATFORM: '${{ matrix.platform }}'
+      DOCKER_TAR: '${{ inputs.image }}_${{ needs.setup.outputs.tag }}_${{ matrix.platform }}.tar'
+      DOCKER_TAG: '${{ inputs.image }}:${{ needs.setup.outputs.tag }}-${{ matrix.platform }}'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: docker/setup-qemu-action@v3
+        if: "${{ matrix.platform != 'amd64'}}"
+        with:
+          platforms: '${{ matrix.platform }}'
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: '${{ env.DOCKER_TAR }}'
+          path: '.'
+      - name: Import Docker images
+        run: |
+          docker load -i "${DOCKER_TAR}"
+          docker image ls
+      - name: Set Up Test Containers
+        run: |
+          cd spec/fixtures/docker
+
+          env DOCKER_PLATFORM="linux/${PLATFORM}" docker compose up -d
+      - name: Run Acceptance Tests
+        run: |
+          bundle exec rspec --force-color --format documentation -I spec/ spec/acceptance/docker/*.rb
+
+  # NOTE: Shipping is a bit tricky due to the way Docker registries work.
+  #
+  #       Basically, you can only easily ship multi-arch containers that
+  #       are built side-by side. However, this constraint precludes
+  #       splitting the build and test steps by architecture to isolate
+  #       failures.
+  #
+  #       So. We build and test each container separately with the
+  #       architecture appended to the image tag. Then we import both
+  #       images into a locally running registry service and use
+  #       the "docker manifest" command to merge those separate
+  #       tags into a multi-arch tag.
+  #
+  #       All fine and good, the missing bit is that Docker really
+  #       does not provide a clean way to copy items between registries.
+  #       Luckily, the "regctl" tool implements this, so we use
+  #       it to copy the merged multi-arch tag to the ghcr.io registry.
+  ship:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    needs: 
+      - setup
+      - build
+      - docker-acceptance
+    # NOTE: This expresion causes the ship step to ignore any tests that
+    #       may be skipped due to no implementation.
+    if: "${{ !cancelled() && !failure() }}"
+    env:
+      TAG: '${{ needs.setup.outputs.tag }}'
+      BUILD_OUTPUT: '${{ toJSON(needs.build.outputs) }}'
+    services:
+      registry:
+        image: 'registry:2'
+        ports:
+          - '5000:5000'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: regclient/actions/regctl-installer@main
+      - name: Login to GitHub Container Registry
+        uses: regclient/actions/regctl-login@main
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - name: Import Docker Images
+        run: |
+          declare -a TAGS
+          items=$(jq -r '.[]|values' <<<"${BUILD_OUTPUT}")
+
+          while IFS='@' read file tag; do
+            local_tag="localhost:5000/${tag}"
+
+            docker load -i "${file}"
+            docker tag "${tag}" "${local_tag}"
+            docker push "${local_tag}"
+
+            TAGS+=("${local_tag}")
+          done <<<"${items}"
+
+          docker manifest create --insecure "localhost:5000/${IMAGE}:${TAG}" "${TAGS[@]}"
+          docker manifest push "localhost:5000/${IMAGE}:${TAG}"
+      - name: Ship It
+        run: |
+          regctl registry set localhost:5000 --tls disabled
+
+          regctl image copy "localhost:5000/${IMAGE}:${TAG}" "ghcr.io/sharpie/puppet-dev-images/${IMAGE}:${TAG}"
+          regctl image copy "localhost:5000/${IMAGE}:${TAG}" "ghcr.io/sharpie/puppet-dev-images/${IMAGE}:latest"

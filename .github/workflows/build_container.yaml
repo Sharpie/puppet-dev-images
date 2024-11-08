@@ -10,6 +10,7 @@ on:
         type: choice
         options:
           - debian-12
+          - raspbian-12
       platforms:
         description: 'JSON list of platforms to build'
         required: true
@@ -46,7 +47,7 @@ jobs:
     needs:
       - setup
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     strategy:
       matrix:
         platform: '${{ fromJSON(inputs.platforms) }}'
@@ -61,6 +62,7 @@ jobs:
     outputs:
       amd64: '${{ steps.save_output.outputs.amd64 }}'
       arm64: '${{ steps.save_output.outputs.arm64 }}'
+      arm: '${{ steps.save_output.outputs.arm }}'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -70,9 +72,19 @@ jobs:
         with:
           platforms: '${{ matrix.platform }}'
       - uses: docker/setup-buildx-action@v3
+        with:
+          buildkitd-flags: "--allow-insecure-entitlement security.insecure"
       - name: Build Docker Container
         run: |
-          docker buildx bake --load --set "*.platform=linux/${PLATFORM}" --set "${IMAGE}.tags=${DOCKER_TAG}" "${IMAGE}"
+          case "${PLATFORM}" in
+          arm)
+            export DOCKER_PLATFORM="linux/arm/v6"
+            ;;
+          *)
+            export DOCKER_PLATFORM="linux/${PLATFORM}"
+          esac
+
+          docker buildx bake --load --allow "security.insecure" --set "*.platform=${DOCKER_PLATFORM}" --set "${IMAGE}.tags=${DOCKER_TAG}" "${IMAGE}"
       - name: Export Docker Container
         run: |
           docker save -o "${DOCKER_TAR}" "${DOCKER_TAG}"
@@ -120,9 +132,17 @@ jobs:
           docker image ls
       - name: Set Up Test Containers
         run: |
+          case "${PLATFORM}" in
+          arm)
+            export DOCKER_PLATFORM="linux/arm/v6"
+            ;;
+          *)
+            export DOCKER_PLATFORM="linux/${PLATFORM}"
+          esac
+
           cd spec/fixtures/docker
 
-          env DOCKER_PLATFORM="linux/${PLATFORM}" docker compose up -d
+          docker compose up -d
       - name: Run Acceptance Tests
         run: |
           bundle exec rspec --force-color --format documentation -I spec/ spec/acceptance/docker/*.rb

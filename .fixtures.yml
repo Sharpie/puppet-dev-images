@@ -1,8 +1,0 @@
----
-fixtures:
-  forge_modules:
-    facts:
-      repo: 'puppetlabs/facts'
-      ref: '0.6.0'
-  repositories:
-    provision: 'https://github.com/puppetlabs/provision.git'
